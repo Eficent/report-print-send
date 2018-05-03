@@ -1,10 +1,8 @@
 # Copyright 2016 LasLabs Inc.
 # License AGPL-3.0 or later (http://www.gnu.org/licenses/agpl.html).
 
-import mock
 import logging
 
-from odoo import exceptions
 from odoo.tests.common import TransactionCase
 
 _logger = logging.getLogger(__name__)
@@ -14,34 +12,20 @@ try:
 except ImportError:
     _logger.debug('Cannot `import zpl2`.')
 
-model = 'odoo.addons.base_report_to_printer.models.printing_server'
-
 
 class TestPrintingLabelZpl2(TransactionCase):
     def setUp(self):
         super(TestPrintingLabelZpl2, self).setUp()
         self.Model = self.env['printing.label.zpl2']
         self.ComponentModel = self.env['printing.label.zpl2.component']
-        self.server = self.env['printing.server'].create({})
-        self.printer = self.env['printing.printer'].create({
-            'name': 'Printer',
-            'server_id': self.server.id,
-            'system_name': 'Sys Name',
-            'default': True,
-            'status': 'unknown',
-            'status_message': 'Msg',
-            'model': 'res.users',
-            'location': 'Location',
-            'uri': 'URI',
-        })
         self.label_vals = {
             'name': 'ZPL II Label',
-            'model_id': self.env.ref(
-                'base_report_to_printer.model_printing_printer').id,
+            'model_id': self.env.ref('base.model_res_partner').id,
         }
         self.component_vals = {
             'name': 'ZPL II Label Component',
         }
+        self.partner = self.env['res.partner'].create({'name': 'Partner'})
 
     def new_label(self, vals=None):
         values = self.label_vals.copy()
@@ -55,23 +39,10 @@ class TestPrintingLabelZpl2(TransactionCase):
             values.update(vals)
         return self.ComponentModel.create(values)
 
-    def test_print_on_bad_model(self):
-        """ Check that printing on the bad model raises an exception """
-        label = self.new_label()
-        with self.assertRaises(exceptions.UserError):
-            label.print_label(self.printer, label)
-
-    @mock.patch('%s.cups' % model)
-    def test_print_empty_label(self, cups):
-        """ Check that printing an empty label works """
-        label = self.new_label()
-        label.print_label(self.printer, self.printer)
-        cups.Connection().printFile.assert_called_once()
-
     def test_empty_label_contents(self):
         """ Check contents of an empty label """
         label = self.new_label()
-        contents = label._generate_zpl2_data(self.printer).decode('utf-8')
+        contents = label._generate_zpl2_data(self.partner).decode('utf-8')
         self.assertEqual(
             contents,
             # Label start
@@ -86,6 +57,9 @@ class TestPrintingLabelZpl2(TransactionCase):
             '^JUR\n'
             # Label end
             '^XZ')
+        self.assertEqual(
+            contents, label.render_label(self.partner)
+        )
 
     def test_sublabel_label_contents(self):
         """ Check contents of a sublabel label component """
@@ -104,7 +78,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'sublabel',
             'sublabel_id': sublabel.id,
         })
-        contents = label._generate_zpl2_data(self.printer).decode('utf-8')
+        contents = label._generate_zpl2_data(self.partner).decode('utf-8')
         self.assertEqual(
             contents,
             # Label start
@@ -404,7 +378,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'label_id': label.id,
             'data': '"%s"' % data,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -437,7 +411,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'data': '"' + data + '"',
             'reverse_print': True,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -472,7 +446,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'data': '"' + data + '"',
             'in_block': True,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -505,7 +479,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'label_id': label.id,
             'component_type': 'rectangle',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -534,7 +508,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'label_id': label.id,
             'component_type': 'diagonal',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -563,7 +537,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'label_id': label.id,
             'component_type': 'circle',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -594,7 +568,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'code_11',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -629,7 +603,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'interleaved_2_of_5',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -664,7 +638,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'code_39',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -699,7 +673,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'code_49',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -735,7 +709,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'data': '"' + data + '"',
             'interpretation_line': True,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -774,7 +748,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'interpretation_line': True,
             'interpretation_line_above': True,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -809,7 +783,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'pdf417',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -844,7 +818,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'ean-8',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -879,7 +853,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'upc-e',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -914,7 +888,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'code_128',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -949,7 +923,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'ean-13',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -984,7 +958,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'qr_code',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             # Label start
@@ -1019,7 +993,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'graphic',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             "^XA\n"
@@ -1043,7 +1017,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'reverse_print': 1,
             'orientation': zpl2.ORIENTATION_ROTATED,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             "^XA\n"
@@ -1065,7 +1039,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'data': '"' + data + '"',
             'orientation': zpl2.ORIENTATION_INVERTED,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             "^XA\n"
@@ -1086,7 +1060,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'data': '"' + data + '"',
             'orientation': zpl2.ORIENTATION_BOTTOM_UP,
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             "^XA\n"
@@ -1106,7 +1080,7 @@ class TestPrintingLabelZpl2(TransactionCase):
             'component_type': 'zpl2_raw',
             'data': '"' + data + '"',
         })
-        contents = label._generate_zpl2_data(self.printer).decode("utf-8")
+        contents = label._generate_zpl2_data(self.partner).decode("utf-8")
         self.assertEqual(
             contents,
             '^XA\n'
