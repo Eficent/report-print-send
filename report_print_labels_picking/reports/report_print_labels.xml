@@ -1,0 +1,15 @@
+
+<odoo>
+    <data>
+        <report
+            id="report_productbarcode_picking"
+            string="Product Barcode in Picking(PDF)"
+            model="stock.picking"
+            report_type="qweb-pdf"
+            name="report_print_labels_picking.report_productbarcode_picking"
+            file="report_print_labels_picking.report_productbarcode_picking"
+            print_report_name="'Products barcode - %s' % (object.name)"
+        />
+
+    </data>
+</odoo>
