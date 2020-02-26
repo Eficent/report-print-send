@@ -121,7 +121,7 @@ class PrintingPrinter(models.Model):
         """ Print a file
         Format could be pdf, qweb-pdf, raw, ...
         """
-        self.ensure_one()
+        # self.ensure_one()
         fd, file_name = mkstemp()
         try:
             os.write(fd, content)
@@ -165,7 +165,7 @@ class PrintingPrinter(models.Model):
     @api.multi
     def print_file(self, file_name, report=None, **print_opts):
         """ Print a file """
-        self.ensure_one()
+        # self.ensure_one()
         connection = self.server_id._open_connection(raise_on_error=True)
         options = self.print_options(report=report, **print_opts)
 

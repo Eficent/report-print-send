@@ -34,7 +34,7 @@ class PrintingServer(models.Model):
 
     @api.multi
     def _open_connection(self, raise_on_error=False):
-        self.ensure_one()
+        # self.ensure_one()
         connection = False
         try:
             connection = cups.Connection(host=self.address, port=self.port)

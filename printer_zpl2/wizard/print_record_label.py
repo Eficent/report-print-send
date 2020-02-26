@@ -9,10 +9,10 @@ class PrintRecordLabel(models.TransientModel):
     _description = 'Print Record Label'
 
     printer_id = fields.Many2one(
-        comodel_name='printing.printer', string='Printer', required=True,
+        comodel_name='printing.printer', string='Printer', required=False,
         help='Printer used to print the labels.')
     label_id = fields.Many2one(
-        comodel_name='printing.label.zpl2', string='Label', required=True,
+        comodel_name='printing.label.zpl2', string='Label', required=False,
         domain=lambda self: [
             ('model_id.model', '=', self.env.context.get('active_model'))],
         help='Label to print.')
